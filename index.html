@@ -6,10 +6,13 @@
 <meta http-equiv="refresh" content="2;url=https://chat.whatsapp.com/BqAWcSjAiXWLBhU2jXumZ5">
 <title>Abrindo grupo do WhatsApp</title>
 <style>
+  * {
+    box-sizing: border-box;
+  }
   html, body {
     margin: 0;
     min-height: 100%;
-    background: #fff;
+    background: #000;
     font-family: Arial, sans-serif;
   }
   body {
@@ -17,13 +20,33 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #222;
+    color: #fff;
     text-align: center;
+    padding: 24px;
+  }
+  main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
   }
   p {
     margin: 0;
-    padding: 20px;
-    font-size: 18px;
+    font-size: 20px;
+    line-height: 1.4;
+  }
+  .button {
+    display: inline-block;
+    padding: 14px 28px;
+    border-radius: 8px;
+    background: #25D366;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .button:hover {
+    background: #1fbd5b;
   }
 </style>
 <script>
@@ -33,6 +56,9 @@
 </script>
 </head>
 <body>
-<p>Abrindo grupo do WhatsApp</p>
+<main>
+  <p>Abrindo o grupo do WhatsApp</p>
+  <a class="button" href="https://chat.whatsapp.com/BqAWcSjAiXWLBhU2jXumZ5">Entrar no grupo</a>
+</main>
 </body>
 </html>
