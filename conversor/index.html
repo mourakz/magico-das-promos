@@ -58,27 +58,25 @@ function convert(){
    name=candidate;
    break;
  }
- // Extrai todos os valores monetários de cada linha.
- // Se existir uma linha "Por:", ela define o preço promocional; caso contrário,
- // usa o menor valor monetário encontrado fora de cupons e parcelas.
+ // Encontra valores de preço em linhas de preço (com ou sem R$)
+ // e escolhe SEMPRE o menor valor numérico encontrado.
+ // Ignora linhas de cupom, parcelas, frete e percentuais.
  const priceCandidates=[];
- const porCandidates=[];
  for(const line of lines){
-   if(/cupom|código promocional|codigo promocional|parcela|parcelado|sem juros|\b\d+\s*x\b/i.test(line)) continue;
-   const matches=[...line.matchAll(/R\$\s*(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?)/gi)];
+   if(/cupom|código promocional|codigo promocional|parcela|parcelado|sem juros|frete|\b\d+\s*x\b|%/i.test(line)) continue;
+   const priceContext=/R\$|\b(de|por|era|agora|preço|preco|pix|à vista|a vista|boleto)\b/i.test(line);
+   if(!priceContext) continue;
+   const matches=[...line.matchAll(/(?:R\$\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?)/gi)];
    for(const match of matches){
      const shown=match[1];
      const numeric=Number(shown.replace(/\./g,'').replace(',','.'));
      if(!Number.isFinite(numeric) || numeric<=0) continue;
      const suffix=line.slice(match.index+match[0].length).match(/^\s*(no\s+pix|à\s+vista|a\s+vista|no\s+boleto)/i);
-     const item={numeric,formatted:'R$ '+shown+(suffix?' '+suffix[1]:'')};
-     priceCandidates.push(item);
-     if(/\bpor\s*:/i.test(line) || /^\s*por\b/i.test(line)) porCandidates.push(item);
+     priceCandidates.push({numeric,formatted:'R$ '+shown+(suffix?' '+suffix[1]:'')});
    }
  }
- const pool=porCandidates.length ? porCandidates : priceCandidates;
- const cheapest=pool.sort((a,b)=>a.numeric-b.numeric)[0];
- const price=cheapest ? cheapest.formatted : '';
+ priceCandidates.sort((a,b)=>a.numeric-b.numeric);
+ const price=priceCandidates.length ? priceCandidates[0].formatted : '';
  const couponLine=lines.find(l=>/(cupom|código promocional|codigo promocional)/i.test(l));
  let coupon='';
  if(couponLine){
