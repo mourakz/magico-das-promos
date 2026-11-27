@@ -15,11 +15,11 @@ label{font-weight:700;display:block;margin-bottom:10px}textarea{width:100%;min-h
 </style></head>
 <body><main>
 <header class="brand"><div class="logo">🪄</div><div><strong>MÁGICO DAS PROMOS</strong><small>Conversor de postagens</small></div></header>
-<h1>Transforme qualquer oferta no seu padrão.</h1><p class="sub">Cole a mensagem de outro grupo. O conversor organiza os dados no formato do Mágico das PROMOS, pronto para copiar e publicar.</p>
+<h1>Transforme qualquer oferta no seu padrão.</h1><p class="sub">Basta colar a mensagem. A postagem será organizada automaticamente no formato do Mágico das PROMOS, pronta para copiar e publicar.</p>
 <section class="panel">
 <label for="source">1. Cole a promoção original</label>
 <textarea id="source" placeholder="Cole aqui o texto da promoção, incluindo preço, cupom e link..."></textarea>
-<div class="actions"><button class="primary" id="convert">✨ Converter promoção</button><button class="secondary" id="clear">Limpar</button></div>
+<div class="actions"><button class="secondary" id="clear">Limpar</button></div>
 <div class="hint">O conversor não inventa dados. Se preço, cupom ou link não aparecerem no texto, ele não cria essas informações.</div>
 </section>
 <section class="panel">
@@ -65,7 +65,7 @@ function convert(){
  const missing=[];if(!name)missing.push('nome do produto');if(!price)missing.push('preço');if(!urls.length)missing.push('link');
  $('status').textContent=missing.length?'Confira antes de publicar: não identifiquei '+missing.join(', ')+'.':'Postagem organizada! Confira o conteúdo e copie.';
 }
-$('convert').addEventListener('click',convert);
+$('source').addEventListener('input',()=>{ if($('source').value.trim()) convert(); else { converted=''; $('result').textContent='Sua postagem convertida aparecerá aqui.'; $('status').textContent=''; } });
 $('clear').addEventListener('click',()=>{$('source').value='';$('result').textContent='Sua postagem convertida aparecerá aqui.';converted='';$('status').textContent='';});
 $('copy').addEventListener('click',async()=>{if(!converted){$('status').textContent='Converta uma promoção antes de copiar.';return}try{await navigator.clipboard.writeText(converted);$('status').textContent='Postagem copiada! Agora é só colar no grupo.'}catch(e){const t=document.createElement('textarea');t.value=converted;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();$('status').textContent='Postagem copiada!'}});
 </script></body></html>
