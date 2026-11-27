@@ -38,10 +38,16 @@ function convert(){
  if(!raw){$('status').textContent='Cole uma promoção primeiro.';return}
  const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
  const urls=[...raw.matchAll(/https?:\/\/[^\s<>]+/gi)].map(m=>m[0].replace(/[),.!?]+$/,''));
- const nameLine=lines.find(l=>!/^https?:\/\//i.test(l)&&!/(cupom|use o código|aplique|compre aqui|oferta por tempo|link na|frete grátis|desconto de|% OFF)/i.test(l)&&!/(R\$\s?\d|\d+[,.]\d{2})/.test(l));
- let name=nameLine?cleanLine(nameLine):'';
- // Remove introductory promotional labels while preserving the product description.
- name=name.replace(/^(oferta|promoção|imperdível|achado)\s*[:!\-]*\s*/i,'').trim();
+ // Preserve the complete product title: collect its full opening block until
+ // the first price, coupon, purchase-link, or urgency information appears.
+ const titleLines=[];
+ for(const line of lines){
+   if(/^https?:\/\//i.test(line)) break;
+   if(/(cupom|use o código|aplique|compre aqui|oferta por tempo|link na|frete grátis|desconto de|% OFF)/i.test(line)) break;
+   if(/^(🔥\s*)?(R\$\s?\d|\d[\d.]*,\d{2})/i.test(line)) break;
+   titleLines.push(line);
+ }
+ let name=titleLines.map(cleanLine).filter(Boolean).join(' ').trim();
  const priceLine=lines.find(l=>/R\$\s?\d[\d.]*([,]\d{2})?|\d[\d.]*,\d{2}\s*(no pix|à vista)?/i.test(l));
  let price='';
  if(priceLine){const m=priceLine.match(/R\$\s?\d[\d.]*([,]\d{2})?|\d[\d.]*,\d{2}/i);price=m?m[0].replace(/\s+/g,' ').trim():'';if(!/^R\$/i.test(price))price='R$ '+price;}
