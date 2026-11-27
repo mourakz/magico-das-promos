@@ -32,28 +32,44 @@ label{font-weight:700;display:block;margin-bottom:10px}textarea{width:100%;min-h
 <script>
 const $=id=>document.getElementById(id);
 let converted='';
-function cleanLine(s){return s.replace(/^\s*[🔥🎟️🎟️🛒⚠️💥🚨📣➡️👉⭐️✨]+\s*/u,'').trim()}
+function cleanLine(s){
+ return s.replace(/^\s*[🔥🎟️🛒⚠️💥🚨📣➡️👉⭐️✨]+\s*/u,'')
+         .replace(/\s*[🔥🎟️🛒⚠️💥🚨📣➡️👉⭐️✨]+\s*$/u,'')
+         .replace(/^\s*(produto|nome do produto)\s*[:\-]\s*/i,'')
+         .trim();
+}
 function convert(){
  const raw=$('source').value.trim();
  if(!raw){$('status').textContent='Cole uma promoção primeiro.';return}
  const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
  const urls=[...raw.matchAll(/https?:\/\/[^\s<>]+/gi)].map(m=>m[0].replace(/[),.!?]+$/,''));
- // Preserve the complete product title: collect its full opening block until
- // the first price, coupon, purchase-link, or urgency information appears.
- const titleLines=[];
+ const isPriceLine=s=>/^\s*(?:🔥\s*)?(?:R\$\s*)?\d[\d.]*(?:,\d{2})?(?:\s*(?:no pix|à vista|no boleto))?\s*$/i.test(cleanLine(s)) || /R\$\s*\d/i.test(s);
+ const isPromoLine=s=>/(cupom|use o código|use o codigo|aplique|compre aqui|oferta por tempo|link na|frete grátis|frete gratis|desconto de|imperdível|imperdivel|aproveite|últimas unidades|ultimas unidades|corre que|só hoje|so hoje|%\\s*off)/i.test(s);
+ // O nome do anúncio é a primeira linha que se parece com título de produto.
+ // Não juntar descrição, chamada promocional ou especificações das linhas seguintes.
+ let name='';
  for(const line of lines){
-   if(/^https?:\/\//i.test(line)) break;
-   if(/(cupom|use o código|aplique|compre aqui|oferta por tempo|link na|frete grátis|desconto de|% OFF)/i.test(line)) break;
-   if(/^(🔥\s*)?(R\$\s?\d|\d[\d.]*,\d{2})/i.test(line)) break;
-   titleLines.push(line);
+   if(/^https?:\/\//i.test(line) || isPriceLine(line) || isPromoLine(line)) continue;
+   const candidate=cleanLine(line);
+   if(!candidate || candidate.length<3) continue;
+   // Evita transformar frases de propaganda em nome de produto.
+   if(/[.!?]$/.test(candidate) && candidate.split(/\s+/).length>5) continue;
+   if(/^(atenção|atencao|promoção|promocao|oferta|novidade|baixou|queima de estoque)\b/i.test(candidate)) continue;
+   name=candidate;
+   break;
  }
- let name=titleLines.map(cleanLine).filter(Boolean).join(' ').trim();
- const priceLine=lines.find(l=>/R\$\s?\d[\d.]*([,]\d{2})?|\d[\d.]*,\d{2}\s*(no pix|à vista)?/i.test(l));
+ const priceLine=lines.find(l=>/R\$\s*\d[\d.]*(?:,\d{2})?|\b\d[\d.]*,\d{2}\b/i.test(l));
  let price='';
- if(priceLine){const m=priceLine.match(/R\$\s?\d[\d.]*([,]\d{2})?|\d[\d.]*,\d{2}/i);price=m?m[0].replace(/\s+/g,' ').trim():'';if(!/^R\$/i.test(price))price='R$ '+price;}
+ if(priceLine){
+   const m=priceLine.match(/R\$\s*\d[\d.]*(?:,\d{2})?|\b\d[\d.]*,\d{2}\b/i);
+   if(m){price=m[0].replace(/\s+/g,' ').trim();if(!/^R\$/i.test(price))price='R$ '+price;}
+ }
  const couponLine=lines.find(l=>/(cupom|código promocional|codigo promocional)/i.test(l));
  let coupon='';
- if(couponLine){const after=couponLine.match(/(?:cupom|código promocional|codigo promocional)\s*[:\-]?\s*([A-Z0-9_-]{3,})/i);coupon=after?after[1]:'';}
+ if(couponLine){
+   const explicit=couponLine.match(/(?:cupom|código promocional|codigo promocional)\s*(?:[:\-]|\s)\s*([A-Z0-9_-]{3,})/i);
+   coupon=explicit?explicit[1].replace(/[.,;:]$/,''):'';
+ }
  const out=[];
  if(name)out.push(name);
  if(price)out.push('🔥 '+price);
