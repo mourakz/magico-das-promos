@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101812"><title>Conversor | Mágico das PROMOS</title>
+<style>
+:root{color-scheme:dark;--bg:#0b100d;--panel:#151e18;--line:#29372e;--green:#43d477;--muted:#aab7ae}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#1b3022 0,#0b100d 55%);color:#f4f7f4;font:16px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+main{width:min(760px,100%);margin:auto;padding:28px 18px 50px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:26px}.logo{width:46px;height:46px;border-radius:14px;background:#1c3927;display:grid;place-items:center;font-size:25px}.brand strong{display:block;font-size:18px;letter-spacing:.3px}.brand small{color:var(--muted)}
+h1{font-size:clamp(25px,5vw,34px);margin:0 0 8px}p.sub{color:var(--muted);margin:0 0 22px;line-height:1.5}
+.panel{background:rgba(21,30,24,.96);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0}
+label{font-weight:700;display:block;margin-bottom:10px}textarea{width:100%;min-height:190px;resize:vertical;border:1px solid #35453a;border-radius:12px;background:#0d140f;color:#fff;padding:14px;font:15px/1.5 inherit;outline:none}textarea:focus{border-color:var(--green)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{border:0;border-radius:12px;padding:13px 17px;font-weight:800;font-size:15px;cursor:pointer}.primary{background:var(--green);color:#092011;flex:1}.secondary{background:#26352b;color:#edf5ef}.output{white-space:pre-wrap;overflow-wrap:anywhere;background:#0c1710;border:1px solid #294333;border-radius:12px;padding:16px;min-height:150px;line-height:1.55;font-size:15px}.hint{font-size:13px;color:var(--muted);margin-top:10px}.status{min-height:20px;color:#83e6a4;font-size:13px;margin-top:9px}.footer{text-align:center;color:#718078;font-size:12px;margin-top:25px}
+@media(max-width:480px){main{padding:22px 14px 36px}.panel{padding:14px}.actions button{width:100%}}
+</style></head>
+<body><main>
+<header class="brand"><div class="logo">🪄</div><div><strong>MÁGICO DAS PROMOS</strong><small>Conversor de postagens</small></div></header>
+<h1>Transforme qualquer oferta no seu padrão.</h1><p class="sub">Cole a mensagem de outro grupo. O conversor organiza os dados no formato do Mágico das PROMOS, pronto para copiar e publicar.</p>
+<section class="panel">
+<label for="source">1. Cole a promoção original</label>
+<textarea id="source" placeholder="Cole aqui o texto da promoção, incluindo preço, cupom e link..."></textarea>
+<div class="actions"><button class="primary" id="convert">✨ Converter promoção</button><button class="secondary" id="clear">Limpar</button></div>
+<div class="hint">O conversor não inventa dados. Se preço, cupom ou link não aparecerem no texto, ele não cria essas informações.</div>
+</section>
+<section class="panel">
+<label for="result">2. Sua postagem pronta</label>
+<div id="result" class="output" aria-live="polite">Sua postagem convertida aparecerá aqui.</div>
+<div class="actions"><button class="primary" id="copy">📋 Copiar postagem</button></div><div class="status" id="status"></div>
+</section>
+<div class="footer">Mágico das PROMOS · Ferramenta de uso rápido</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let converted='';
+function cleanLine(s){return s.replace(/^\s*[🔥🎟️🎟️🛒⚠️💥🚨📣➡️👉⭐️✨]+\s*/u,'').trim()}
+function convert(){
+ const raw=$('source').value.trim();
+ if(!raw){$('status').textContent='Cole uma promoção primeiro.';return}
+ const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+ const urls=[...raw.matchAll(/https?:\/\/[^\s<>]+/gi)].map(m=>m[0].replace(/[),.!?]+$/,''));
+ const nameLine=lines.find(l=>!/^https?:\/\//i.test(l)&&!/(cupom|use o código|aplique|compre aqui|oferta por tempo|link na|frete grátis|desconto de|% OFF)/i.test(l)&&!/(R\$\s?\d|\d+[,.]\d{2})/.test(l));
+ let name=nameLine?cleanLine(nameLine):'';
+ // Remove introductory promotional labels while preserving the product description.
+ name=name.replace(/^(oferta|promoção|imperdível|achado)\s*[:!\-]*\s*/i,'').trim();
+ const priceLine=lines.find(l=>/R\$\s?\d[\d.]*([,]\d{2})?|\d[\d.]*,\d{2}\s*(no pix|à vista)?/i.test(l));
+ let price='';
+ if(priceLine){const m=priceLine.match(/R\$\s?\d[\d.]*([,]\d{2})?|\d[\d.]*,\d{2}/i);price=m?m[0].replace(/\s+/g,' ').trim():'';if(!/^R\$/i.test(price))price='R$ '+price;}
+ const couponLine=lines.find(l=>/(cupom|código promocional|codigo promocional)/i.test(l));
+ let coupon='';
+ if(couponLine){const after=couponLine.match(/(?:cupom|código promocional|codigo promocional)\s*[:\-]?\s*([A-Z0-9_-]{3,})/i);coupon=after?after[1]:'';}
+ const out=[];
+ if(name)out.push(name);
+ if(price)out.push('🔥 '+price);
+ if(coupon)out.push('🎟️ Aplique o cupom: '+coupon);
+ if(urls.length)out.push('Compre aqui:\n'+urls[0]);
+ out.push('⚠️ Oferta por tempo limitado. A compra pelo link gera comissão ao canal.');
+ converted=out.join('\n\n');
+ $('result').textContent=converted;
+ const missing=[];if(!name)missing.push('nome do produto');if(!price)missing.push('preço');if(!urls.length)missing.push('link');
+ $('status').textContent=missing.length?'Confira antes de publicar: não identifiquei '+missing.join(', ')+'.':'Postagem organizada! Confira o conteúdo e copie.';
+}
+$('convert').addEventListener('click',convert);
+$('clear').addEventListener('click',()=>{$('source').value='';$('result').textContent='Sua postagem convertida aparecerá aqui.';converted='';$('status').textContent='';});
+$('copy').addEventListener('click',async()=>{if(!converted){$('status').textContent='Converta uma promoção antes de copiar.';return}try{await navigator.clipboard.writeText(converted);$('status').textContent='Postagem copiada! Agora é só colar no grupo.'}catch(e){const t=document.createElement('textarea');t.value=converted;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();$('status').textContent='Postagem copiada!'}});
+</script></body></html>
