@@ -67,5 +67,8 @@ function convert(){
 }
 $('source').addEventListener('input',()=>{ if($('source').value.trim()) convert(); else { converted=''; $('result').textContent='Sua postagem convertida aparecerá aqui.'; $('status').textContent=''; } });
 $('clear').addEventListener('click',()=>{$('source').value='';$('result').textContent='Sua postagem convertida aparecerá aqui.';converted='';$('status').textContent='';});
-$('copy').addEventListener('click',async()=>{if(!converted){$('status').textContent='Converta uma promoção antes de copiar.';return}try{await navigator.clipboard.writeText(converted);$('status').textContent='Postagem copiada! Agora é só colar no grupo.'}catch(e){const t=document.createElement('textarea');t.value=converted;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();$('status').textContent='Postagem copiada!'}});
+let clearAfterCopy=null;
+function clearFields(){if(clearAfterCopy){clearTimeout(clearAfterCopy);clearAfterCopy=null}$('source').value='';$('result').textContent='Sua postagem convertida aparecerá aqui.';converted='';$('status').textContent='Campos limpos. Pronto para a próxima promoção.';}
+$('source').addEventListener('input',()=>{if(clearAfterCopy){clearTimeout(clearAfterCopy);clearAfterCopy=null}});
+$('copy').addEventListener('click',async()=>{if(!converted){$('status').textContent='Converta uma promoção antes de copiar.';return}try{await navigator.clipboard.writeText(converted);$('status').textContent='Postagem copiada! Os campos serão limpos em 5 segundos.'}catch(e){const t=document.createElement('textarea');t.value=converted;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();$('status').textContent='Postagem copiada! Os campos serão limpos em 5 segundos.'}if(clearAfterCopy)clearTimeout(clearAfterCopy);clearAfterCopy=setTimeout(clearFields,5000)});
 </script></body></html>
