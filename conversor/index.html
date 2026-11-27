@@ -25,7 +25,7 @@ label{font-weight:700;display:block;margin-bottom:10px}textarea{width:100%;min-h
 <section class="panel">
 <label for="result">2. Sua postagem pronta</label>
 <div id="result" class="output" aria-live="polite">Sua postagem convertida aparecerá aqui.</div>
-<div class="actions"><button class="primary" id="share">🟢 Compartilhar no WhatsApp</button><button class="secondary" id="copy">📋 Copiar postagem</button></div><div class="hint">O WhatsApp abrirá com a mensagem preparada. Escolha o grupo e toque em Enviar. Para publicar nos dois grupos, repita o compartilhamento e escolha o outro grupo.</div><div class="status" id="status"></div>
+<div class="actions"><button class="secondary" id="copy">📋 Copiar postagem</button></div><div class="status" id="status"></div>
 </section>
 <div class="footer">Mágico das PROMOS · Ferramenta de uso rápido</div>
 </main>
@@ -67,6 +67,5 @@ function convert(){
 }
 $('source').addEventListener('input',()=>{ if($('source').value.trim()) convert(); else { converted=''; $('result').textContent='Sua postagem convertida aparecerá aqui.'; $('status').textContent=''; } });
 $('clear').addEventListener('click',()=>{$('source').value='';$('result').textContent='Sua postagem convertida aparecerá aqui.';converted='';$('status').textContent='';});
-$('share').addEventListener('click',async()=>{if(!converted){$('status').textContent='Cole uma promoção primeiro.';return}if(navigator.share){try{await navigator.share({text:converted});$('status').textContent='Compartilhamento aberto. Escolha o grupo e confirme o envio no WhatsApp.';return}catch(e){if(e&&e.name==='AbortError'){$('status').textContent='Compartilhamento cancelado.';return}}}window.open('https://wa.me/?text='+encodeURIComponent(converted),'_blank','noopener');$('status').textContent='WhatsApp aberto com a mensagem preparada. Escolha o grupo e toque em Enviar.'});
 $('copy').addEventListener('click',async()=>{if(!converted){$('status').textContent='Converta uma promoção antes de copiar.';return}try{await navigator.clipboard.writeText(converted);$('status').textContent='Postagem copiada! Agora é só colar no grupo.'}catch(e){const t=document.createElement('textarea');t.value=converted;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();$('status').textContent='Postagem copiada!'}});
 </script></body></html>
