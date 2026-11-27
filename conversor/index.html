@@ -58,12 +58,24 @@ function convert(){
    name=candidate;
    break;
  }
- const priceLine=lines.find(l=>/R\$\s*\d[\d.]*(?:,\d{2})?|\b\d[\d.]*,\d{2}\b/i.test(l));
- let price='';
- if(priceLine){
-   const m=priceLine.match(/R\$\s*\d[\d.]*(?:,\d{2})?|\b\d[\d.]*,\d{2}\b/i);
-   if(m){price=m[0].replace(/\s+/g,' ').trim();if(!/^R\$/i.test(price))price='R$ '+price;}
+ // Procura preços em todas as linhas relevantes e escolhe o menor valor.
+ // Ignora cupons e valores de parcelas para não confundir com o preço final.
+ const priceCandidates=[];
+ for(const line of lines){
+   if(/cupom|código promocional|codigo promocional|parcela|parcelado|sem juros|\b\d+\s*x\b/i.test(line)) continue;
+   if(!/R\$|\b(de|por|era|agora|pix|à vista|a vista|boleto)\b/i.test(line)) continue;
+   const matches=[...line.matchAll(/R\$\s*(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?)/gi)];
+   for(const match of matches){
+     const shown=match[1];
+     const numeric=Number(shown.replace(/\./g,'').replace(',','.'));
+     if(Number.isFinite(numeric) && numeric>0){
+       const suffix=line.slice(match.index+match[0].length).match(/^\s*(no\s+pix|à\s+vista|a\s+vista|no\s+boleto)/i);
+       priceCandidates.push({numeric,formatted:'R$ '+shown+(suffix?' '+suffix[1]:'')});
+     }
+   }
  }
+ const cheapest=priceCandidates.sort((a,b)=>a.numeric-b.numeric)[0];
+ const price=cheapest ? cheapest.formatted : '';
  const couponLine=lines.find(l=>/(cupom|código promocional|codigo promocional)/i.test(l));
  let coupon='';
  if(couponLine){
