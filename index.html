@@ -3,62 +3,46 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="2;url=https://chat.whatsapp.com/BqAWcSjAiXWLBhU2jXumZ5">
 <title>Abrindo grupo do WhatsApp</title>
-<style>
-  * {
-    box-sizing: border-box;
-  }
-  html, body {
-    margin: 0;
-    min-height: 100%;
-    background: #000;
-    font-family: Arial, sans-serif;
-  }
-  body {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    text-align: center;
-    padding: 24px;
-  }
-  main {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 22px;
-  }
-  p {
-    margin: 0;
-    font-size: 20px;
-    line-height: 1.4;
-  }
-  .button {
-    display: inline-block;
-    padding: 14px 28px;
-    border-radius: 8px;
-    background: #25D366;
-    color: #fff;
-    font-size: 16px;
-    font-weight: 700;
-    text-decoration: none;
-  }
-  .button:hover {
-    background: #1fbd5b;
-  }
-</style>
 <script>
+  // ===== LISTA DE GRUPOS =====
+  // O site manda cada pessoa para o PRIMEIRO grupo da lista que não estiver marcado como cheio.
+  // Quando um grupo lotar, troque "cheio: false" por "cheio: true" nele.
+  // Para adicionar um grupo novo, copie uma linha e cole o link de convite.
+  var GRUPOS = [
+    { nome: "Grupo 1", link: "https://chat.whatsapp.com/BqAWcSjAiXWLBhU2jXumZ5", cheio: false },
+    { nome: "Grupo 2", link: "https://chat.whatsapp.com/CtfMNqj08bf3XSw0PxWCRb", cheio: false },
+    { nome: "Grupo 3", link: "https://chat.whatsapp.com/Ey9mgq9JkBmKuTIojbCUEQ", cheio: false }
+  ];
+  // Se todos estiverem cheios, a pessoa vai para o canal do Telegram em vez de ver um grupo lotado.
+  var RESERVA = "https://t.me/omagicodaspromos";
+  // ===========================
+
+  var destino = RESERVA;
+  for (var i = 0; i < GRUPOS.length; i++) {
+    if (!GRUPOS[i].cheio) { destino = GRUPOS[i].link; break; }
+  }
   window.setTimeout(function () {
-    window.location.replace("https://chat.whatsapp.com/BqAWcSjAiXWLBhU2jXumZ5");
-  }, 2000);
+    window.location.replace(destino);
+  }, 1500);
 </script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #000; font-family: Arial, sans-serif; }
+  body { min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 24px; }
+  main { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+  p { margin: 0; font-size: 20px; line-height: 1.4; }
+  .button { display: inline-block; padding: 14px 28px; border-radius: 8px; background: #25D366; color: #fff; font-size: 16px; font-weight: 700; text-decoration: none; }
+  .button:hover { background: #1fbd5b; }
+</style>
 </head>
 <body>
 <main>
   <p>Abrindo o grupo do WhatsApp</p>
-  <a class="button" href="https://chat.whatsapp.com/BqAWcSjAiXWLBhU2jXumZ5">Entrar no grupo</a>
+  <a class="button" id="entrar" href="https://chat.whatsapp.com/BqAWcSjAiXWLBhU2jXumZ5">Entrar no grupo</a>
 </main>
+<script>
+  document.getElementById("entrar").href = destino;
+</script>
 </body>
 </html>
