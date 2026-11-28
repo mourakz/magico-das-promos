@@ -38,13 +38,50 @@ function cleanLine(s){
          .replace(/^\s*(produto|nome do produto)\s*[:\-]\s*/i,'')
          .trim();
 }
+// Encontra TODOS os cupons do texto (um ou mais), em qualquer linha que fale de cupom/código.
+// Aceita formatos como "Cupom: ABC10", "Cupons: ABC10 + DEF20", "Cupom 1: ABC / Cupom 2: DEF",
+// "Use os cupons ABC10 e DEF20" ou o código sozinho na linha de baixo.
+const COUPON_KEY=/(cupo(?:m|ns)|c[oó]digos?)/i;
+const NOT_CODE=new Set(['CUPOM','CUPONS','CODIGO','CÓDIGO','CODIGOS','CÓDIGOS','PROMOCIONAL','PROMOCIONAIS','DESCONTO','DESCONTOS','OFF','PIX','FRETE','GRATIS','GRÁTIS','LOJA','USE','USAR','APLIQUE','APLICAR','COM','DE','DA','DO','NO','NA','OS','AS','O','A','E','OU','MAIS','JUNTOS','JUNTO','AMBOS','DOIS','LINK','AQUI','APP','SITE','MOEDAS','RESGATE','ATIVE','PAGINA','PÁGINA','PRODUTO','VALOR','ACIMA','COMPRA','COMPRAS','PRIMEIRA','HOJE','SÓ','SO','REAIS','EXCLUSIVO','VÁLIDO','VALIDO','ATÉ','ATE','NOVOS','CLIENTES','ACUMULA','ACUMULE','COMBINA','COMBINE','COMBO','CUPOM1','CUPOM2','PROMO','OFERTA','CARRINHO','NO CARRINHO','TAMBÉM','TAMBEM','SEGUNDO','PRIMEIRO']);
+function extractCoupons(lines){
+ const codes=[];
+ const add=raw=>{
+   const c=raw.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9_-]+$/g,'');
+   if(c.length<3||c.length>25)return false;
+   const up=c.toUpperCase();
+   if(NOT_CODE.has(up))return false;
+   if(/^\d+$/.test(c))return false;          // número solto (ex.: "20") não é cupom
+   if(!/\d/.test(c) && c!==up)return false;  // palavra comum em minúsculas não é cupom
+   if(!codes.includes(up))codes.push(up);
+   return true;
+ };
+ const tokensOf=text=>text.replace(/https?:\/\/\S+/g,' ').replace(/R\$\s*\d[\d.,]*/gi,' ').replace(/\d+(?:[.,]\d+)?\s*%/g,' ').split(/[\s+,;/|&•·()\[\]"'“”]+/);
+ for(let i=0;i<lines.length;i++){
+   const line=lines[i];
+   if(/^https?:\/\//i.test(line))continue;
+   const m=line.match(COUPON_KEY);
+   if(!m)continue;
+   let rest=line.slice(m.index+m[0].length);
+   // Se houver ":" depois da palavra cupom, o código vem depois dele ("Cupom de R$ 20: ABC20").
+   const colon=rest.lastIndexOf(':');
+   if(colon>=0)rest=rest.slice(colon+1);
+   let found=false;
+   for(const tok of tokensOf(rest)) if(tok && add(tok)) found=true;
+   // Código sozinho na linha de baixo ("Cupom:" + "ABC10").
+   if(!found && i+1<lines.length){
+     const next=cleanLine(lines[i+1]);
+     if(next && !/\s/.test(next) && !/^https?:/i.test(next)) add(next);
+   }
+ }
+ return codes;
+}
 function convert(){
  const raw=$('source').value.trim();
  if(!raw){$('status').textContent='Cole uma promoção primeiro.';return}
  const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
  const urls=[...raw.matchAll(/https?:\/\/[^\s<>]+/gi)].map(m=>m[0].replace(/[),.!?]+$/,''));
  const isPriceLine=s=>/^\s*(?:🔥\s*)?(?:R\$\s*)?\d[\d.]*(?:,\d{2})?(?:\s*(?:no pix|à vista|no boleto))?\s*$/i.test(cleanLine(s)) || /R\$\s*\d/i.test(s);
- const isPromoLine=s=>/(cupom|use o código|use o codigo|aplique|compre aqui|oferta por tempo|link na|frete grátis|frete gratis|desconto de|imperdível|imperdivel|aproveite|últimas unidades|ultimas unidades|corre que|só hoje|so hoje|%\\s*off)/i.test(s);
+ const isPromoLine=s=>/(cupo(?:m|ns)|use o código|use o codigo|aplique|compre aqui|oferta por tempo|link na|frete grátis|frete gratis|desconto de|imperdível|imperdivel|aproveite|últimas unidades|ultimas unidades|corre que|só hoje|so hoje|%\\s*off)/i.test(s);
  // O nome do anúncio é a primeira linha que se parece com título de produto.
  // Não juntar descrição, chamada promocional ou especificações das linhas seguintes.
  let name='';
@@ -65,7 +102,7 @@ function convert(){
  const priceCandidates=[];
  const porCandidates=[];
  for(const line of lines){
-   if(/cupom|código promocional|codigo promocional|frete|%/i.test(line)) continue;
+   if(/cupo(?:m|ns)|c[oó]digo|frete|%/i.test(line)) continue;
    const priceContext=/R\$|\b(de|por|era|agora|preço|preco|pix|à vista|a vista|boleto)\b/i.test(line);
    if(!priceContext) continue;
    const cleaned=line.replace(/\b(?:em\s*)?\d+\s*x\b/gi,' ').replace(/\d+(?:[.,]\d+)?\s*%/g,' ');
@@ -83,16 +120,12 @@ function convert(){
  const pool=porCandidates.length ? porCandidates : priceCandidates;
  pool.sort((a,b)=>a.numeric-b.numeric);
  const price=pool.length ? pool[0].formatted : '';
- const couponLine=lines.find(l=>/(cupom|código promocional|codigo promocional)/i.test(l));
- let coupon='';
- if(couponLine){
-   const explicit=couponLine.match(/(?:cupom|código promocional|codigo promocional)\s*(?:[:\-]|\s)\s*([A-Z0-9_-]{3,})/i);
-   coupon=explicit?explicit[1].replace(/[.,;:]$/,''):'';
- }
+ const coupons=extractCoupons(lines);
  const out=[];
  if(name)out.push(name);
  if(price)out.push('🔥 '+price);
- if(coupon)out.push('🎟️ Aplique o cupom: '+coupon);
+ if(coupons.length===1)out.push('🎟️ Aplique o cupom: '+coupons[0]);
+ if(coupons.length>1)out.push('🎟️ Use os '+coupons.length+' cupons juntos: '+coupons.join(' + '));
  if(urls.length)out.push('Compre aqui:\n'+urls[0]);
  out.push('⚠️ Oferta por tempo limitado. A compra pelo link gera comissão ao canal.');
  converted=out.join('\n\n');
